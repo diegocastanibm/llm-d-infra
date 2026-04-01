@@ -211,7 +211,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: llm-d/llm-d
-          ref: ${{ inputs.llm_d_ref }}
+          ref: ${{ inputs.llm_d_ref || github.ref }}
 
       - name: Checkout caller repo (WVA)
         if: inputs.deploy_wva && inputs.caller_repo != ''
