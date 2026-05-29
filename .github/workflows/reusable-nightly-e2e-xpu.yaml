@@ -11,11 +11,10 @@ name: Reusable - Nightly E2E XPU
 #       with:
 #         guide_name: optimized-baseline
 #         namespace: llm-d-xpu-is
-#         scheduler_release_name: optimized-baseline
-#         scheduler_values_files: |
-#           guides/recipes/scheduler/base.values.yaml
-#           guides/recipes/scheduler/features/monitoring.values.yaml
-#           guides/optimized-baseline/scheduler/optimized-baseline.values.yaml
+#         router_release_name: optimized-baseline
+#         router_values_files: |
+#           guides/recipes/router/base.values.yaml
+#           guides/optimized-baseline/router/optimized-baseline.values.yaml
 #       secrets: inherit
 
 on:
@@ -23,18 +22,18 @@ on:
     inputs:
       # --- Guide configuration ---
       guide_name:
-        description: 'Guide directory name under guides/ in llm-d/llm-d (e.g. optimized-baseline, pd-disaggregation, precise-prefix-cache-aware)'
+        description: 'Guide directory name under guides/ in llm-d/llm-d (e.g. optimized-baseline, pd-disaggregation, precise-prefix-cache-routing)'
         required: true
         type: string
       namespace:
         description: 'Kubernetes namespace for the deployment'
         required: true
         type: string
-      scheduler_release_name:
-        description: 'Helm release name for the scheduler (standalone GAIE chart). Also used as the hostname stem for GATEWAY_HOST: <release>-epp.<ns>.svc.cluster.local.'
+      router_release_name:
+        description: 'Helm release name for the router (standalone chart). Also used as the hostname stem for GATEWAY_HOST: <release>-epp.<ns>.svc.cluster.local.'
         required: true
         type: string
-      scheduler_values_files:
+      router_values_files:
         description: 'Newline-separated list of values files passed to `helm install` as `-f <file>`, in order. Paths are relative to the llm-d/llm-d repo root.'
         required: true
         type: string
@@ -46,10 +45,20 @@ on:
 
       # --- Versions ---
       gaie_version:
-        description: 'Gateway API Inference Extension version — used for both the CRD apply and the scheduler chart version'
+        description: 'Gateway API Inference Extension version — used for the CRD apply (kubectl apply -k .../config/crd?ref=<gaie_version>)'
         required: false
         type: string
         default: 'v1.5.0'
+      router_chart_oci:
+        description: 'OCI URI for the router helm chart.'
+        required: false
+        type: string
+        default: 'oci://ghcr.io/llm-d/charts/llm-d-router-standalone-dev'
+      router_chart_version:
+        description: 'Version for the router chart.'
+        required: false
+        type: string
+        default: 'v0'
 
       # --- Repository ---
       llm_d_ref:
@@ -65,12 +74,12 @@ on:
         type: string
         default: ''
       pre_deploy_script:
-        description: 'Optional inline shell snippet run after checkout + prereqs but before `helm install` (e.g. `sed` patches to the scheduler values file). Executed from the repo root.'
+        description: 'Optional inline shell snippet run after checkout + prereqs but before `helm install` (e.g. `sed` patches to the router values file). Executed from the repo root.'
         required: false
         type: string
         default: ''
       helm_post_renderer:
-        description: 'Optional `--post-renderer` path (relative to repo root) for `helm install`. Used by guides that apply kustomize patches to the standalone chart (e.g. precise-prefix-cache-aware UDS tokenizer).'
+        description: 'Optional `--post-renderer` path (relative to repo root) for `helm install`. Used by guides that need kustomize patches on top of the rendered chart.'
         required: false
         type: string
         default: ''
@@ -105,8 +114,10 @@ jobs:
     env:
       GUIDE_NAME: ${{ inputs.guide_name }}
       NAMESPACE: ${{ inputs.namespace }}
-      SCHEDULER_RELEASE_NAME: ${{ inputs.scheduler_release_name }}
+      ROUTER_RELEASE_NAME: ${{ inputs.router_release_name }}
       GAIE_VERSION: ${{ inputs.gaie_version }}
+      ROUTER_CHART_OCI: ${{ inputs.router_chart_oci }}
+      ROUTER_CHART_VERSION: ${{ inputs.router_chart_version }}
       MODELSERVER_KUSTOMIZE_DIR: ${{ inputs.modelserver_kustomize_dir || format('guides/{0}/modelserver/xpu/vllm', inputs.guide_name) }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
     steps:
@@ -161,10 +172,10 @@ jobs:
           echo "Running pre-deploy script..."
           echo "$PRE_DEPLOY_SCRIPT" | bash
 
-      - name: Deploy scheduler via helm (standalone)
+      - name: Deploy router via helm (standalone)
         shell: bash
         env:
-          SCHEDULER_VALUES_FILES: ${{ inputs.scheduler_values_files }}
+          ROUTER_VALUES_FILES: ${{ inputs.router_values_files }}
           HELM_POST_RENDERER: ${{ inputs.helm_post_renderer }}
           HELM_INSTALL_ARGS: ${{ inputs.helm_install_args }}
         run: |
@@ -172,22 +183,22 @@ jobs:
           while IFS= read -r f; do
             [ -z "$f" ] && continue
             VALUES_ARGS="${VALUES_ARGS} -f ${f}"
-          done <<< "$SCHEDULER_VALUES_FILES"
+          done <<< "$ROUTER_VALUES_FILES"
 
           POST_RENDERER_ARG=""
           if [ -n "$HELM_POST_RENDERER" ]; then
             POST_RENDERER_ARG="--post-renderer ${HELM_POST_RENDERER}"
           fi
 
-          echo "Installing scheduler (standalone chart) via helm..."
+          echo "Installing router chart ${ROUTER_CHART_OCI}@${ROUTER_CHART_VERSION} via helm..."
           # shellcheck disable=SC2086
-          helm install "$SCHEDULER_RELEASE_NAME" \
-            oci://registry.k8s.io/gateway-api-inference-extension/charts/standalone \
+          helm install "$ROUTER_RELEASE_NAME" \
+            "$ROUTER_CHART_OCI" \
             ${VALUES_ARGS} \
             ${POST_RENDERER_ARG} \
             ${HELM_INSTALL_ARGS} \
             -n "$NAMESPACE" \
-            --version "$GAIE_VERSION" \
+            --version "$ROUTER_CHART_VERSION" \
             | tee "$HOME/${GUIDE_NAME}-xpu-deployment.log"
 
       - name: Deploy model server via kustomize
@@ -257,7 +268,7 @@ jobs:
         env:
           # Standalone mode: no Gateway resource exists; point e2e-validate.sh
           # at the EPP service's ClusterIP DNS name directly.
-          GATEWAY_HOST: ${{ inputs.scheduler_release_name }}-epp.${{ inputs.namespace }}.svc.cluster.local
+          GATEWAY_HOST: ${{ inputs.router_release_name }}-epp.${{ inputs.namespace }}.svc.cluster.local
         run: |
           cd .github/scripts/e2e
           ./e2e-validate.sh -n "$NAMESPACE" -v
@@ -297,8 +308,8 @@ jobs:
         if: always() && inputs.skip_cleanup == false
         shell: bash
         run: |
-          echo "Cleaning up scheduler helm release..."
-          helm uninstall "$SCHEDULER_RELEASE_NAME" -n "$NAMESPACE" || true
+          echo "Cleaning up router helm release..."
+          helm uninstall "$ROUTER_RELEASE_NAME" -n "$NAMESPACE" || true
 
           echo "Cleaning up model server kustomize manifests..."
           if [ -d "$MODELSERVER_KUSTOMIZE_DIR" ]; then
