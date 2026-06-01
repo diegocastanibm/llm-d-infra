@@ -272,8 +272,19 @@ jobs:
 
       - name: Install llmdbenchmark
         run: |
+          if [[ ! -f install.sh ]]; then
+            curl -sSL https://raw.githubusercontent.com/llm-d/llm-d-benchmark/main/install.sh -o install.sh
+            chmod +x install.sh
+          fi
           ./install.sh -y 2>&1
-          sudo cp util/debug_info_on_failure.sh /usr/local/bin
+
+          if [[ ! -f util/debug_info_on_failure.sh ]]; then
+            curl -sSL https://raw.githubusercontent.com/llm-d/llm-d-benchmark/blob/main/util/debug_info_on_failure.sh -o /tmp/debug_info_on_failure.sh
+            chmod +x /tmp/debug_info_on_failure.sh
+            sudo cp /tmp/debug_info_on_failure.sh /usr/local/bin
+          else
+            sudo cp util/debug_info_on_failure.sh /usr/local/bin
+          fi
         shell: bash
 
       - name: Set up extra command line parameters
