@@ -312,6 +312,10 @@ jobs:
       - name: Install llmdbenchmark
         run: |
           cd ~
+          if [[ ! -d ~/work/llm-d-benchmark ]];
+          then
+            ln -s ~/work/llm-d-benchmark ~/llm-d-benchmark
+          fi          
           if [[ ! -f install.sh ]]; then
             curl -sSL https://raw.githubusercontent.com/llm-d/llm-d-benchmark/main/install.sh -o install.sh
             chmod +x install.sh
@@ -351,12 +355,13 @@ jobs:
 
       - name: Conditionally clone llm-d from main repo
         run: |
-          find ~ -type f -name "cks_nvshmem3.3.9.patch" -print
+          #find ~ -type f -name "cks_nvshmem3.3.9.patch" -print
           cd ~
-          if [[ ! -d llm-d ]];
+          if [[ ! -d ~/work/llm-d ]];
           then
-            echo "### llm-d code NOT found, will clone now"
-            git clone https://github.com/llm-d/llm-d.git
+            ln -s ~/work/llm-d ~/llm-d
+            #echo "### llm-d code NOT found, will clone now"
+            #git clone https://github.com/llm-d/llm-d.git
           fi
           cd llm-d
           echo "### llm-d code is present (branch $(git branch --show-current))"
