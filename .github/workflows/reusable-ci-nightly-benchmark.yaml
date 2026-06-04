@@ -466,7 +466,7 @@ jobs:
             cat ~/work/llm-d-benchmark/llm-d-benchmark/config/scenarios/$LLMDBENCH_CICD_SCENARIO_DIR/$LLMDBENCH_CICD_SCENARIO.yaml | yq '.scenario[0].kustomize.acceleratorBackend'
             echo " ### Setting priority class \"$LLMDBENCH_CICD_PRIORITY_CLASS\" on scenario \"$LLMDBENCH_CICD_SCENARIO\""
             for i in vllm decode prefill; do
-              find ~/work/llm-d/llm-d/$LLMDBENCH_CICD_SCENARIO_DIR/$LLMDBENCH_CICD_SCENARIO/modelserver/ -type f -name "patch-$i.yaml" -exec yq ".spec.template.spec.priorityClassName=\"nightly-gpu-critical\"" -i {} \;
+              find ~/work/llm-d/llm-d/$LLMDBENCH_CICD_SCENARIO_DIR/$LLMDBENCH_CICD_SCENARIO/modelserver/ -type f -name "patch-$i.yaml" -exec yq ".spec.template.spec.priorityClassName=\"$LLMDBENCH_CICD_PRIORITY_CLASS"" -i {} \;
               find ~/work/llm-d/llm-d/$LLMDBENCH_CICD_SCENARIO_DIR/$LLMDBENCH_CICD_SCENARIO/modelserver/ -type f -name "patch-$i.yaml" -print -exec yq '.spec.template.spec.priorityClassName' {} \;
             done
             export LLMDBENCH_CICD_DECODE_PODS="${{ inputs.decode_pods }}"
