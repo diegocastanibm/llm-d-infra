@@ -391,6 +391,23 @@ jobs:
             echo "ERROR: please define a default StorageClass on your cluster"
             exit 1
           fi
+          echo "Ensuring storageclass \"$IS_DEFAULT_SC\" can create a pvc with accessMode \"ReadWriteMany\"..."
+          cat <<PVC_EOF > pvc.yaml
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: llm-d-cicd-test-rwx-pvc
+          spec:
+            accessModes:
+              - ReadWriteMany
+            storageClassName: ibm-spectrum-scale-fileset
+            resources:
+              requests:
+                storage: 1G
+          PVC_EOF
+          kubectl apply -f pvc.yaml
+          kubectl wait --for=jsonpath='{.status.phase}'=Bound pvc/llm-d-cicd-test-rwx-pvc --timeout=300s
+          rm pvc.yaml
         shell: bash
 
       - name: Request TPUs (DWS)
@@ -594,15 +611,17 @@ jobs:
         run: |
           cd ~
           touch ~/work/lkcmd.txt
+          kubectl create namespace $LLMDBENCH_CICD_NS --dry-run=client -o yaml | kubectl apply -f -          
           if [[ $LLMDBENCH_CICD_METHOD == "kustomize" ]]; then
             if [[ -z $LLMDBENCH_HF_TOKEN ]]; then
               echo "#### Assigning fake value to LLMDBENCH_HF_TOKEN"
               export LLMDBENCH_HF_TOKEN=hf_zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz
-            else
-              export LLMDBENCH_HF_TOKEN=$(echo $LLMDBENCH_HF_TOKEN | base64 -d)
             fi
             echo -n $LLMDBENCH_HF_TOKEN > hf_token.txt
-            kubectl create namespace $LLMDBENCH_CICD_NS --dry-run=client -o yaml | kubectl apply -f -
+            IS_PLAINTEXT=$(echo $LLMDBENCH_HF_TOKEN | grep -q "hf_ || true)
+            if [[ -z $IS_PLAINTEXT ]]; then
+              echo -n $LLMDBENCH_HF_TOKEN | base64 -d > hf_token.txt
+            fi
             kubectl create secret generic llm-d-hf-token --from-file=HF_TOKEN=hf_token.txt --namespace "${NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
             rm -rf hf_token.txt
           fi
