@@ -407,7 +407,28 @@ jobs:
                 storage: 1G
           PVC_EOF
           kubectl apply -f pvc.yaml
+          cat <<POD_EOF > pod.yaml
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: llm-d-cicd-test-pod
+          spec:
+            containers:
+            - name: llm-d-cicd-test-pod
+              image: ubuntu:latest
+              command: ["sleep"]
+              args: ["infinity"]
+              volumeMounts:
+              - name: my-storage-volume
+                mountPath: /test
+            volumes:
+            - name: my-storage-volume
+              persistentVolumeClaim:
+                claimName: llm-d-cicd-test-rwx-pvc
+          POD_EOF
+          kubectl apply -f pod.yaml
           kubectl wait --for=jsonpath='{.status.phase}'=Bound pvc/llm-d-cicd-test-rwx-pvc --timeout=300s
+          rm pod.yaml
           rm pvc.yaml
         shell: bash
 
