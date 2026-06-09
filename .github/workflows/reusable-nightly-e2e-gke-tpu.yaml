@@ -202,6 +202,7 @@ on:
           echo "TPU v7 capacity is currently not available. This run has been skipped." >> $GITHUB_STEP_SUMMARY
 
   nightly-e2e-tpu:
+    timeout-minutes: 90
     runs-on: ubuntu-latest
     if: inputs.tpu_type != 'tpu7x'
     env:
