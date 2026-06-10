@@ -614,7 +614,7 @@ jobs:
             curl -sSL https://raw.githubusercontent.com/llm-d/llm-d-benchmark/main/install.sh -o install.sh
             chmod +x install.sh
           fi
-          ./install.sh -y 2>&1 || true
+          bash -x ./install.sh -y
           llmdbenchmark --version
           if [[ ! -f util/debug_info_on_failure.sh ]]; then
             curl -sSL https://raw.githubusercontent.com/llm-d/llm-d-benchmark/refs/heads/main/util/debug_info_on_failure.sh -o /tmp/debug_info_on_failure.sh
