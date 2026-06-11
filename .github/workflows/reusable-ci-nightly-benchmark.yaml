@@ -148,6 +148,11 @@ on:
         required: false
         type: 'string'
         default: '1200'
+      pvc_bind_timeout:
+        description: 'Timeout in seconds to wait for a pvc to be bound'
+        required: false
+        type: 'string'
+        default: '1200'        
       job_timeout:
         description: 'Timeout for the Kubernetes job itself (e.g. 2700s)'
         required: false
@@ -288,15 +293,14 @@ jobs:
       LLMDBENCH_CICD_ACCELERATOR: ${{ inputs.accelerator_type || 'gpu' }}
       LLMDBENCH_CICD_BACKEND: ${{ inputs.backend_type || 'vllm' }}
       LLMDBENCH_CICD_INFRA_PROVIDER: ${{ inputs.infra_provider || '' }}
-      LLMDBENCH_CICD_OFFLOADING_TARGET: ${{ inpute.offloading_target || '' }}
+      LLMDBENCH_CICD_OFFLOADING_TARGET: ${{ inputs.offloading_target || '' }}
       LLMDBENCH_CICD_CONNECTOR: ${{ inputs.connector || '' }}
       LLMDBENCH_CICD_CLEANUP: ${{ inputs.cleanup || 'true' }}
       LLMDBENCH_CICD_DATA_ACCESS_TIMEOUT: ${{ inputs.data_access_timeout || '1200' }}
-      LLMDBENCH_CICD_WAIT_TIMEOUT: ${{ inputs.wait_timeout || '1200' }}
       LLMDBENCH_CICD_JOB_TIMEOUT: ${{ inputs.job_timeout || '2700s' }}
       LLMDBENCH_CICD_KUSTOMIZE_STANDUP_TIMEOUT: ${{ inputs.kustomize_standup_timeout || '1200' }}
-      LLMDBENCH_CICD_RUN_WAIT_TIMEOUT: ${{ inputs.run_wait_timeout || '3600' }}
-      LLMDBENCH_CICD_RUN_PVC_BIND_TIMEOUT: ${{ inputs.run_pvc_bind_timeout || '1200' }}
+      LLMDBENCH_CICD_RUN_WAIT_TIMEOUT: ${{ inputs.wait_timeout || '3600' }}
+      LLMDBENCH_CICD_RUN_PVC_BIND_TIMEOUT: ${{ inputs.pvc_bind_timeout || '1200' }}
       LLMDBENCH_CICD_DECODE_PODS: ${{ inputs.decode_pods || 'auto' }}
       LLMDBENCH_CICD_PREFILL_PODS: ${{ inputs.prefill_pods || 'auto' }}
       LLMDBENCH_WORKSPACE: ${{ inputs.workspace_dir || '/tmp/llmdbenchcicd' }}
@@ -818,7 +822,7 @@ jobs:
           elif [[ "$LLMDBENCH_CICD_TARGET" == "cks" && "${{ inputs.standup_method }}" == "fma" ]]; then
             echo "Temporarily unable to test \"fma\" on \"cks\" clusters"
           else
-            LLMDBENCH_CMD="llmdbenchmark --spec $LLMDBENCH_CICD_SCENARIO_DIR/$LLMDBENCH_CICD_SCENARIO $LLMDBENCH_EXTRA_CMD run $LLMDBENCH_EXTRA_RUN_OPERATION_CMD --namespace $LLMDBENCH_CICD_NS --gateway-class $LLMDBENCH_CICD_GATEWAY_CLASS --methods $LLMDBENCH_CICD_METHOD --harness $LLMDBENCH_CICD_HARNESS --workload $LLMDBENCH_CICD_WORKLOAD --data-access-timeout $LLMDBENCH_CICD_DATA_ACCESS_TIMEOUT --wait-timeout $LLMDBENCH_CICD_WAIT_TIMEOUT"
+            LLMDBENCH_CMD="llmdbenchmark --spec $LLMDBENCH_CICD_SCENARIO_DIR/$LLMDBENCH_CICD_SCENARIO $LLMDBENCH_EXTRA_CMD run $LLMDBENCH_EXTRA_RUN_OPERATION_CMD --namespace $LLMDBENCH_CICD_NS --gateway-class $LLMDBENCH_CICD_GATEWAY_CLASS --methods $LLMDBENCH_CICD_METHOD --harness $LLMDBENCH_CICD_HARNESS --workload $LLMDBENCH_CICD_WORKLOAD 
             echo "### $(cat ~/work/lkcmd.txt); $LLMDBENCH_CMD ###"
             eval $LLMDBENCH_CMD
           fi
