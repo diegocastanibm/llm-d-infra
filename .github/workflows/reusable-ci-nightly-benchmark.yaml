@@ -712,7 +712,10 @@ jobs:
       - name: Apply overrides to kustomize manifests
         run: |
           if [[ $LLMDBENCH_CICD_METHOD == "kustomize" ]]; then
-            LLMDBENCH_CICD_KUSTOMIZE_PATH=~/work/llm-d/llm-d/$LLMDBENCH_CICD_SCENARIO_DIR/$LLMDBENCH_CICD_SCENARIO/$LLMDBENCH_CICD_OFFLOADING_TARGET/modelserver/$LLMDBENCH_CICD_ACCELERATOR/$LLMDBENCH_CICD_BACKEND/$LLMDBENCH_CICD_CONNECTOR-connector/$LLMDBENCH_CICD_INFRA_PROVIDER
+            if [[ ! -z $LLMDBENCH_CICD_CONNECTOR ]]; then
+              export LLMDBENCH_CICD_CONNECTOR=$LLMDBENCH_CICD_CONNECTOR-connector
+            fi
+            LLMDBENCH_CICD_KUSTOMIZE_PATH=~/work/llm-d/llm-d/$LLMDBENCH_CICD_SCENARIO_DIR/$LLMDBENCH_CICD_SCENARIO/$LLMDBENCH_CICD_OFFLOADING_TARGET/modelserver/$LLMDBENCH_CICD_ACCELERATOR/$LLMDBENCH_CICD_BACKEND/$LLMDBENCH_CICD_CONNECTOR/$LLMDBENCH_CICD_INFRA_PROVIDER
             echo "Kustomize full path is \"$LLMDBENCH_CICD_KUSTOMIZE_PATH\""
             detected_model=$(kubectl kustomize $LLMDBENCH_CICD_KUSTOMIZE_PATH | yq .spec.template.spec.containers[0].args | grep -Ev "\- \--|\- '|\---|null" | uniq | cut -d ' ' -f 2)
             echo "LLMDBENCH_CICD_DETECTED_MODEL is \"$detected_model\""
