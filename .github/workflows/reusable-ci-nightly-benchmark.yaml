@@ -742,13 +742,13 @@ jobs:
           lkcmd="yq -i \".scenario[0].kustomize.guideVariableOverrides.ROUTER_STANDALONE_CHART = \\\"$LLMDBENCH_CICD_ROUTER_STANDALONE_CHART_URL\\\"\" $LLMDBENCH_CICD_SCENARIO_FILE"
           echo -n "; $lkcmd" >> ~/work/lkcmd.txt
           eval $lkcmd
-          cat ~/work/llm-d-benchmark/llm-d-benchmark/config/scenarios/$LLMDBENCH_CICD_SCENARIO_DIR/$LLMDBENCH_CICD_SCENARIO.yaml | yq '.scenario[0].kustomize.guideVariableOverrides.ROUTER_CHART_URL'
+          cat ~/work/llm-d-benchmark/llm-d-benchmark/config/scenarios/$LLMDBENCH_CICD_SCENARIO_DIR/$LLMDBENCH_CICD_SCENARIO.yaml | yq '.scenario[0].kustomize.guideVariableOverrides.ROUTER_STANDALONE_CHART'
           #
           echo "### Setting \"ROUTER_GATEWAY_CHART\" to \"$LLMDBENCH_CICD_ROUTER_GATEWAY_CHART_URL\" in \"$LLMDBENCH_CICD_SCENARIO_FILE\""
           lkcmd="yq -i \".scenario[0].kustomize.guideVariableOverrides.ROUTER_GATEWAY_CHART = \\\"$LLMDBENCH_CICD_ROUTER_GATEWAY_CHART_URL\\\"\" $LLMDBENCH_CICD_SCENARIO_FILE"
           echo -n "; $lkcmd" >> ~/work/lkcmd.txt
           eval $lkcmd
-          cat ~/work/llm-d-benchmark/llm-d-benchmark/config/scenarios/$LLMDBENCH_CICD_SCENARIO_DIR/$LLMDBENCH_CICD_SCENARIO.yaml | yq '.scenario[0].kustomize.guideVariableOverrides.ROUTER_CHART_URL'
+          cat ~/work/llm-d-benchmark/llm-d-benchmark/config/scenarios/$LLMDBENCH_CICD_SCENARIO_DIR/$LLMDBENCH_CICD_SCENARIO.yaml | yq '.scenario[0].kustomize.guideVariableOverrides.ROUTER_GATEWAY_CHART'
           #
           echo "### Setting \"ROUTER_CHART_VERSION\" to \"$LLMDBENCH_CICD_ROUTER_CHART_VERSION\" in \"$LLMDBENCH_CICD_SCENARIO_FILE\""
           lkcmd="yq -i \".scenario[0].kustomize.guideVariableOverrides.ROUTER_CHART_VERSION = \\\"$LLMDBENCH_CICD_ROUTER_CHART_VERSION\\\"\" $LLMDBENCH_CICD_SCENARIO_FILE"
