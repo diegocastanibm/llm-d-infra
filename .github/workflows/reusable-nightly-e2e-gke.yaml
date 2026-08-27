@@ -173,7 +173,7 @@ on:
         required: false
         default: 'nightly'
         type: string
-        
+
 jobs:
   nightly-e2e:
     timeout-minutes: 90
@@ -194,8 +194,9 @@ jobs:
         uses: actions/checkout@v7.0.1
         with:
           repository: llm-d/llm-d
-          ref: ${{ (inputs.matrix_type != '' && inputs.matrix_type != 'nightly') &&
-inputs.matrix_type || inputs.llm_d_ref || github.ref }}
+          ref: >-
+            ${{ (inputs.matrix_type != '' && inputs.matrix_type != 'nightly') &&
+            inputs.matrix_type || inputs.llm_d_ref || github.ref }}
           persist-credentials: false
 
       - name: Authenticate to Google Cloud
