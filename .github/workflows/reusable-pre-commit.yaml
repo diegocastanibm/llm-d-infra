@@ -1,0 +1,57 @@
+# Reusable pre-commit workflow
+# Runs the calling repo's .pre-commit-config.yaml over all files, so a bad
+# commit fails the PR instead of relying on contributors having run
+# `pre-commit install` locally.
+#
+# Runs with --all-files rather than only changed files: a shared reusable
+# workflow can be broken by an edit elsewhere in the repo, and a
+# changed-files-only run would not catch it.
+#
+# Usage in consuming repo:
+#   name: pre-commit
+#   on: pull_request
+#   jobs:
+#     pre-commit:
+#       uses: llm-d/llm-d-infra/.github/workflows/reusable-pre-commit.yaml@main
+#       permissions:
+#         contents: read
+
+name: pre-commit (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      python_version:
+        description: 'Python version used to run pre-commit'
+        required: false
+        default: '3.12'
+        type: string
+      extra_args:
+        description: 'Arguments passed to `pre-commit run`'
+        required: false
+        default: '--all-files --show-diff-on-failure'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  pre-commit:
+    name: Run pre-commit hooks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7.0.0
+        with:
+          python-version: ${{ inputs.python_version }}
+
+      - name: Run pre-commit
+        uses: pre-commit/action@v3.0.1
+        with:
+          extra_args: ${{ inputs.extra_args }}

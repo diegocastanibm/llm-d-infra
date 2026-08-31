@@ -1,0 +1,8 @@
+# actionlint configuration
+# Declares the self-hosted runner labels used by the nightly e2e workflows so
+# actionlint does not report them as unknown runner labels.
+self-hosted-runner:
+  labels:
+    - waldorf
+    - openshift
+    - pok-prod
